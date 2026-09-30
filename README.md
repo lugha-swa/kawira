@@ -26,17 +26,22 @@ ukaguzi wa kujitegemea unaotumika kwenye lugha-swa/swa.
 ## Hali ya sasa
 
 Angalia [`hati/mipaka.md`](hati/mipaka.md) kwa hali kamili, ya kweli
-(kila dai lina uthibitisho ulioandikwa) — Sehemu 1 (`kiini.s`, boot
-stub) imekamilika na imethibitishwa kwa QEMU. Sehemu 2 (`--kernel`
-mode ya mkusanyaji wa Swa, kuruhusu `kernel_main()` iandikwe kwa Swa
-halisi) inaendelea.
+(kila dai lina uthibitisho ulioandikwa) — `kiini.s` (boot stub) na
+`kernel_main.swa` (Swa HALISI, iliyokusanywa na `stage1 --kernel`
+kutoka [lugha-swa/swa](https://github.com/lugha-swa/swa)) zote mbili
+zimekamilika na zimethibitishwa kwa QEMU: Kawira inaanza, inaingia
+64-bit long mode, na kuandika "Kawira -- Swa kwenye ring 0" kwenye
+skrini -- kikitokana na msimbo wa Swa uliokusanywa, si stub ya mkono.
 
 ## Kujaribu
 
 ```
-bash gharama/jenga.sh          # kusanya kiini.s (nasm)
-bash gharama/kimbiza-qemu.sh    # anzisha kwenye QEMU (KVM ikiwepo)
+STAGE1=/njia/kwenda/stage1 bash gharama/jenga.sh   # kusanya kernel_main.swa (stage1 --kernel) na kiini.s (nasm)
+bash gharama/kimbiza-qemu.sh                       # anzisha kwenye QEMU (KVM ikiwepo)
 ```
 
+Inahitaji `stage1` ya [lugha-swa/swa](https://github.com/lugha-swa/swa)
+ipatikane (kigezo cha mazingira `STAGE1`, au kwenye PATH) -- Kawira
+NI Swa kwenye ring 0, `kernel_main.swa` ni chanzo halisi cha Swa.
 Hakuna GRUB, hakuna ISO, hakuna linker — QEMU inaelewa Multiboot1
 moja kwa moja kupitia `-kernel`.

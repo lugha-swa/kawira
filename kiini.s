@@ -164,24 +164,18 @@ _start64:
     jmp .halt64
 
 ; ---------------------------------------------------------------
-; kernel_main -- STUB YA MKONO YA MUDA (Sehemu 1 pekee, kuthibitisha
-; kiini.s peke yake KABLA ya kuunganisha na mkusanyaji wa Swa).
-; Itabadilishwa na baiti halisi zilizozalishwa na "stage1 --kernel"
-; (incbin) kwenye Sehemu 2 ya mpango.
+; kernel_main -- SASA NI SWA HALISI (Sehemu 2, lugha-swa/swa PR #290
+; "stage1 --kernel"), SI stub ya mkono tena. `kernel_main.bin` ni pato
+; ghafi la ".text" la kernel_main.swa (chanzo kimo kwenye hazina hii,
+; kilichokusanywa na gharama/jenga.sh kabla ya nasm kuita hapa) --
+; kernel_kagua_wigo (uzalishaji.swa) inathibitisha kernel_main ni kazi
+; YA KWANZA iliyotangazwa, hivyo baiti hizi zinaanzia HASA kwenye
+; ofseti 0 ya pato, na zinaisha na "ret" ya kawaida (injini ya codegen
+; ya --exe iliyotumika tena na hali_exe==2 -- angalia PR #290) -- "call
+; kernel_main" ya juu inafanya kazi bila mabadiliko yoyote zaidi.
 ; ---------------------------------------------------------------
 kernel_main:
-    mov rax, 0xB8000               ; anwani ya kudumu ya VGA text
-                                    ; buffer (80x25, herufi+rangi
-                                    ; kila baiti mbili)
-    mov word [rax], 0x4B4F          ; 'O' rangi 0x4B (chaguo-msingi
-                                    ; hapa: nyekundu chinichini,
-                                    ; njano juu) -- rangi ya bandia
-                                    ; ya makusudi ili ITOFAUTIANE na
-                                    ; rangi ya kawaida ya maandishi
-                                    ; (0x0F), kuthibitisha kwa jicho
-                                    ; hii ni herufi TULIYOANDIKA SISI,
-                                    ; si maandishi ya awali ya BIOS
-    ret
+    incbin "kernel_main.bin"
 
 ; ---------------------------------------------------------------
 ; Data: GDT ndogo ya 64-bit (null + code + data PEKEE -- hakuna TSS,
