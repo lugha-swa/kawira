@@ -1,0 +1,72 @@
+// kernel_kbd_isr.swa -- mantiki ya "kibodi imebonyezwa" (Sehemu 3).
+//
+// Kazi hii INAKUSANYWA TOFAUTI na kernel_main.swa (mwito wake wa
+// "stage1 --kernel" TOFAUTI, incbin TOFAUTI kwenye kiini.s) --
+// kioo cha muundo uliotumika Sehemu 2. Jina "kernel_main" HAPA SI
+// kosa la kunakili: kernel_kagua_wigo (lugha-swa/swa,
+// msingi/mkusanyaji/uzalishaji.swa) inadai kwa NGUVU kazi ya KWANZA
+// iliyotangazwa iitwe HASA "kernel_main" (angalia KOSA lake:
+// "hakuna kazi 'kernel_main'") -- ni jina linalotambuliwa na
+// kernel_kagua_wigo, SI jina la HALISI litakalotumika kwenye kiini.s
+// (huko, baiti za pato zinaitwa kupitia lebo "kernel_kbd_isr",
+// angalia kiini.s).
+//
+// Muundo: soma kbd_scancode() (port 0x60). Ikiwa biti ya juu
+// imewekwa (>= 128) -- tukio la "kuachia kitufe" (key release),
+// SIYO "kubonyeza" -- puuza. Vinginevyo, tafsiri Scan Code Set 1
+// (kiwango cha maunzi kilichoenea, kisichobadilika -- angalia
+// OSDev Wiki "PS/2 Keyboard") kwenda ASCII kwa SUBSET iliyofaa
+// kuonekana kwa macho: herufi ndogo a-z, tarakimu 0-9, nafasi.
+// Funguo zisizotambulika (shift, ctrl, funguo maalum, herufi kubwa,
+// n.k.) zinapuuzwa KIMYA -- ni za kawaida kwa kibodi halisi, SI
+// hitilafu (nje ya wigo wa Sehemu 3, angalia hati/mipaka.md).
+n32 kernel_main() {
+    n32 s = kbd_scancode();
+    kama (s >= 128) {
+        rudisha 0;  // tukio la kuachia kitufe -- puuza
+    }
+
+    // Tarakimu 0-9 (Scan Code Set 1: 0x02-0x0B)
+    kama (s == 2) { vga_herufi(49); }   // '1'
+    kama (s == 3) { vga_herufi(50); }   // '2'
+    kama (s == 4) { vga_herufi(51); }   // '3'
+    kama (s == 5) { vga_herufi(52); }   // '4'
+    kama (s == 6) { vga_herufi(53); }   // '5'
+    kama (s == 7) { vga_herufi(54); }   // '6'
+    kama (s == 8) { vga_herufi(55); }   // '7'
+    kama (s == 9) { vga_herufi(56); }   // '8'
+    kama (s == 10) { vga_herufi(57); }  // '9'
+    kama (s == 11) { vga_herufi(48); }  // '0'
+
+    // Herufi ndogo a-z (Scan Code Set 1, mpangilio wa QWERTY)
+    kama (s == 30) { vga_herufi(97); }   // a
+    kama (s == 48) { vga_herufi(98); }   // b
+    kama (s == 46) { vga_herufi(99); }   // c
+    kama (s == 32) { vga_herufi(100); }  // d
+    kama (s == 18) { vga_herufi(101); }  // e
+    kama (s == 33) { vga_herufi(102); }  // f
+    kama (s == 34) { vga_herufi(103); }  // g
+    kama (s == 35) { vga_herufi(104); }  // h
+    kama (s == 23) { vga_herufi(105); }  // i
+    kama (s == 36) { vga_herufi(106); }  // j
+    kama (s == 37) { vga_herufi(107); }  // k
+    kama (s == 38) { vga_herufi(108); }  // l
+    kama (s == 50) { vga_herufi(109); }  // m
+    kama (s == 49) { vga_herufi(110); }  // n
+    kama (s == 24) { vga_herufi(111); }  // o
+    kama (s == 25) { vga_herufi(112); }  // p
+    kama (s == 16) { vga_herufi(113); }  // q
+    kama (s == 19) { vga_herufi(114); }  // r
+    kama (s == 31) { vga_herufi(115); }  // s
+    kama (s == 20) { vga_herufi(116); }  // t
+    kama (s == 22) { vga_herufi(117); }  // u
+    kama (s == 47) { vga_herufi(118); }  // v
+    kama (s == 17) { vga_herufi(119); }  // w
+    kama (s == 45) { vga_herufi(120); }  // x
+    kama (s == 21) { vga_herufi(121); }  // y
+    kama (s == 44) { vga_herufi(122); }  // z
+
+    kama (s == 57) { vga_herufi(32); }   // nafasi (space)
+
+    rudisha 0;
+}

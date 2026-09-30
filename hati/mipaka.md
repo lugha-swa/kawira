@@ -48,12 +48,91 @@ kuipokea).
 - Identity-map ni MB 2 za kwanza PEKEE -- kumbukumbu zaidi ya hapo
   haijapangiwa (haihitajiki bado, hakuna ugawaji wa kumbukumbu wa
   aina yoyote -- `tenga()` haipo kwenye wigo wa `--kernel`).
-- HAKUNA interrupts (IDT haijawekwa), HAKUNA input ya kibodi, HAKUNA
-  multitasking, HAKUNA mfumo wa faili.
-- `vga_andika()` inahitaji hoja iwe mfuatano halisi (literal), SI
-  kigezo -- angalia `lugha-swa/swa` `uzalishaji_vga_andika`.
+- `vga_andika()` (literal) inahitaji hoja iwe mfuatano halisi, SI
+  kigezo -- angalia `lugha-swa/swa` `uzalishaji_vga_andika`. (Sehemu
+  3 iliongeza `vga_herufi(usemi)`, inayokubali usemi WOWOTE -- angalia
+  chini.)
 - Miundo, D32/D64, `chagua`, vigezo vya ulimwengu -- vyote nje ya
   wigo wa `--kernel` (kosa la wazi wakati wa kukusanya).
+
+## Sehemu 3 — Interrupts na Uingizaji wa Kibodi (IMEKAMILIKA na IMETHIBITISHWA)
+
+**Kinachofanya kazi (kimethibitishwa kwa vitendo):** `kiini.s` sasa
+inaweka IDT (256 entries, entry 0x21 pekee ina maana -- angalia
+chini), inaremapa PIC ya 8259 (IRQ0-7 -> vectors 0x20-0x27, IRQ8-15
+-> 0x28-0x2F, kuepuka mgongano na CPU exception vectors), na baada ya
+`kernel_main()` kurudi, inafungua (unmask) IRQ1 PEKEE na `sti`,
+kisha inangoja kwenye kitanzi cha `hlt`. Kila bonyezo la kitufe
+linaloshughulikiwa (herufi ndogo a-z, tarakimu 0-9, nafasi) linaita
+`isr_kbd_trampoline` (assembly, inahifadhi/kurudisha rejesta ZOTE za
+general-purpose) -> `kernel_kbd_isr` (Swa HALISI, `kernel_kbd_isr.swa`,
+iliyokusanywa TOFAUTI na `kernel_main.swa` kwa mwito wake wenyewe wa
+`stage1 --kernel`) -> `kbd_scancode()` kusoma port 0x60, tafsiri
+Scan Code Set 1 kwenda ASCII, `vga_herufi(herufi)` kuandika kwenye
+skrini bila kuvuruga kaka (cursor) iliyopo -- herufi mpya zinaendelea
+KUTOKA pale ujumbe wa boot ulipoishia, SI kuandika juu yake.
+
+Builtins mbili mpya ziliongezwa kwenye `lugha-swa/swa` (`--kernel`
+mode, `hali_exe==2`) kwa Sehemu hii: `kbd_scancode() -> n32` (PR #291)
+na `vga_herufi(usemi)` (PR #291, inatathmini USEMI WOWOTE wakati wa
+kukimbia -- KIOO cha `vga_andika()` lakini kwa herufi MOJA
+iliyokokotolewa, SI mfuatano halisi).
+
+**Uthibitisho uliofanywa (QEMU + monitor socket, `sendkey`):**
+- Boot ya kawaida ilithibitishwa KWANZA (ujumbe wa boot bado sahihi,
+  register state -- `EFER=...0500`, `CS64`, `HLT=1` -- bado sahihi,
+  kama Sehemu 1+2).
+- Funguo NNE tofauti zilitumwa kupitia QEMU monitor (`sendkey a`,
+  `sendkey 5`, `sendkey spc`, `sendkey z`) -- baada ya KILA moja, VGA
+  memory (0xB8000) ilisomwa (`xp`) na kusimbuliwa kwa mkono: herufi
+  SAHIHI ilionekana KILA WAKATI, ikiongezeka KATIKA MFUATANO sahihi
+  moja kwa moja baada ya ujumbe wa boot (`"...ring 0" -> "...ring 0a"
+  -> "...ring 0a5" -> "...ring 0a5 " -> "...ring 0a5 z"`), ikithibitisha
+  TAFSIRI ya scancode (funguo tofauti kabisa kwenye jedwali la Scan
+  Code Set 1, SI bahati ya kesi moja) NA usimamizi sahihi wa kaka.
+- `info registers` ililinganishwa KABLA na BAADA ya kila `sendkey`:
+  RAX/RBX/RCX/RDX/RSI/RDI/RBP/**RSP**/R8-R15/RIP ZOTE zilibaki SAWA
+  KABISA -- inathibitisha `isr_kbd_trampoline` inahifadhi/kurudisha
+  rejesta zote sahihi (hakuna uvujaji wa rafu -- RSP isiyobadilika ni
+  uthibitisho wa moja kwa moja kuwa idadi ya push == idadi ya pop).
+- Uthibitisho wa ZIADA usio wa moja kwa moja lakini WENYE NGUVU: funguo
+  NNE zilizofuatana ZOTE zilishughulikiwa kwa mafanikio -- kama EOI
+  (`out 0x20, 0x20`) ingekosewa au kukosekana, PIC ingezuia IRQ1 YOYOTE
+  ya PILI isifike kabisa (IRQ ya kiwango kile kile "bado inahudumiwa"
+  kwa PIC ya 8259) -- funguo za 2, 3, na 4 kufanikiwa ni uthibitisho
+  kwamba EOI inatumwa KWA USAHIHI kila wakati, si tu mara ya kwanza.
+
+**Ugunduzi wa kando ulioandikwa wakati wa maendeleo (SI mdudu, ni
+tabia ya makusudi iliyoshughulikiwa kwa uwazi):**
+- `stage1 --kernel` HUONGEZA baiti 11 za `mov dword [0x9000], 0`
+  (kusafisha kaka) MWANZONI kabisa mwa KILA pato lake, bila masharti
+  (ni sahihi kwa `kernel_main.bin`, ambayo INAPASWA kuanzisha kaka
+  mara moja). `kernel_kbd_isr.bin` (Sehemu 3) inaitwa MARA NYINGI
+  (kila bonyezo), hivyo baiti hizi 11 zinarukwa MOJA KWA MOJA kwenye
+  `incbin` (`incbin "kernel_kbd_isr.bin", 11`, angalia maoni kwenye
+  `kiini.s`) -- imethibitishwa kwa usahihi kwa Python (`d[:11].hex()
+  == "c704250090000000000000"`, na `d[11:15] == push rbp; mov
+  rbp,rsp` prologue HALISI ya kazi).
+- NASM haikubali `(lebo & 0xFFFF)`/`(lebo >> 16)` MOJA KWA MOJA hata
+  kwenye `-f bin` (jaribio dogo tofauti lilithibitisha hili ni tabia
+  ya JUMLA ya NASM, SI kosa la muundo wa IDT yetu) -- suluhisho
+  (linalotumika kwenye `idt_table`, `kiini.s`): `(lebo - $$) +
+  KIINI_BASE` ni SCALAR halali (tofauti ya lebo mbili kwenye sehemu
+  moja, kioo cha `dw $ - gdt64 - 1` iliyopo tayari), kisha shift/AND
+  zinafanya kazi kama kawaida.
+
+**Kikomo cha wazi (makusudi, kwa muda):**
+- IDT ina entry MOJA TU (0x21/IRQ1) -- zilizobaki 255 zinabaki "not
+  present". Exception/interrupt yoyote NJE ya IRQ1 (mfano #DE, #PF
+  kutoka kwa mdudu wa baadaye) itasababisha triple fault (QEMU
+  inasimama/inarudisha upya) -- handler ya jumla ya exceptions NI
+  Sehemu 4+ (inahitaji kushughulikia error-code-on-stack kwa baadhi
+  ya vectors, utata usiohitajika kwa lengo la Sehemu 3).
+- Ni SUBSET ya kibodi: herufi ndogo a-z, tarakimu 0-9, nafasi PEKEE.
+  Shift/ctrl/backspace/enter/herufi kubwa/funguo maalum -- HAZITAMBULIKI
+  (zinapuuzwa kimya, SI hitilafu -- ni za kawaida kwa kibodi halisi).
+- Multitasking, kumbukumbu halisi (physical allocator), framebuffer ya
+  kweli, mfumo wa faili -- bado NJE ya wigo (Sehemu 4+).
 
 ## Kanuni ya kudumu
 
@@ -66,9 +145,10 @@ badiliko lolote kwake linahitaji uthibitisho ule ule wa QEMU wa
 mwisho hadi mwisho, si kuamini `--kernel` peke yake bila kujaribu
 boot ya kweli.
 
-## Kazi ya baadaye (Sehemu 3+)
+## Kazi ya baadaye (Sehemu 4+)
 
-Interrupts (IDT, PIC/APIC), keyboard input, kumbukumbu halisi
-(physical page allocator), framebuffer ya kweli, multitasking, mfumo
-wa faili -- ramani kamili ya njia hii imehifadhiwa kwenye mazungumzo
-yaliyosababisha mradi huu.
+Handler ya jumla ya exceptions/faults (IDT nzima, si vector moja),
+funguo maalum (shift/ctrl/backspace/enter, herufi kubwa), kumbukumbu
+halisi (physical page allocator), framebuffer ya kweli, multitasking,
+mfumo wa faili -- ramani kamili ya njia hii imehifadhiwa kwenye
+mazungumzo yaliyosababisha mradi huu.
