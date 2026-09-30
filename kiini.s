@@ -5,9 +5,12 @@
 ; Kazi: kuanzia Multiboot1 (32-bit protected mode, PE=1 PG=0),
 ; kuweka jedwali dogo la paging (identity-map MB 2 za kwanza kwa
 ; ukurasa mkubwa mmoja), kuwezesha long mode (PAE+LME+PG), kuruka
-; kwenda 64-bit code segment kupitia GDT ndogo, kisha kuita
-; kernel_main() (bado stub ya mkono katika hatua hii -- itabadilishwa
-; na baiti zilizozalishwa na "stage1 --kernel" kwenye Sehemu 2).
+; kwenda 64-bit code segment kupitia GDT ndogo, kuweka IDT+PIC (Sehemu
+; 3 -- angalia chini), kisha kuita kernel_main() (Swa HALISI,
+; iliyozalishwa na "stage1 --kernel", Sehemu 2). Baada ya kernel_main
+; kurudi, kibodi (IRQ1) inawezeshwa (sti) na CPU inangoja matukio
+; kwenye kitanzi cha "hlt" (Sehemu 3, kwa maelezo kamili angalia chini
+; ya faili hii, karibu na isr_kbd_trampoline).
 ;
 ; Fomati: BINARY GHAFI (si ELF) -- Multiboot "a.out kludge" (bit 16
 ; ya flags) inaeleza bootloader/QEMU wapi pa kupakia na wapi pa
@@ -148,19 +151,45 @@ _start64:
                                    ; kuepuka mchanganyiko wa saizi za
                                    ; kuhifadhi kati ya njia mbili)
 
-    call kernel_main               ; SWA (au, kwenye hatua hii ya
-                                   ; kwanza ya uthibitisho, stub ya
-                                   ; mkono chini) -- HAKUNA hoja
-                                   ; (argc/argv haina maana kwenye
-                                   ; ring 0, hakuna mfumo wa
-                                   ; uendeshaji unaotupatia hayo)
+    ; ---- Sehemu 3: weka IDT + PIC KABLA ya kuita kernel_main --
+    ; interrupts bado zimezimwa (cli tangu _start32), hivyo hakuna
+    ; hatari ya IRQ kufika kabla jedwali kuwa tayari; "sti" halisi
+    ; inatokea BAADA ya kernel_main kurudi, chini. ----
+    call kawira_weka_idt
+    call kawira_pic_remap_na_funga_zote
 
-    ; kernel_main HAIPASWI kurudi (ni kosa la kimantiki kama
-    ; itafanya hivyo) -- HAKUNA "exit" syscall ya kuiita (hakuna wa
-    ; kuipokea), hivyo SIMAMA kwa uwazi badala ya kuendelea kimya.
-    cli
+    call kernel_main               ; Swa HALISI (Sehemu 2) -- HAKUNA
+                                   ; hoja (argc/argv haina maana
+                                   ; kwenye ring 0, hakuna mfumo wa
+                                   ; uendeshaji unaotupatia hayo).
+                                   ; Inaandika ujumbe wa boot kwenye
+                                   ; VGA kisha inarudi -- SI kosa
+                                   ; tena (Sehemu 3): kazi halisi sasa
+                                   ; inatokea kwenye ISR ya kibodi,
+                                   ; iliyoamshwa na kitanzi cha hlt
+                                   ; chini.
+
+    ; ---- Fungua (unmask) IRQ1 (kibodi) PEKEE kwenye PIC ya master,
+    ; KISHA sti -- mpangilio huu (unmask KABLA ya sti) unahakikisha
+    ; hakuna dirisha ambapo IRQ1 ingefika ikiwa imefunguliwa lakini
+    ; sti bado haijafanyika (isingefika kwa vyovyote, CPU haikubali
+    ; interrupts hadi sti, lakini mpangilio huu bado ni wazi zaidi
+    ; kusoma: "andaa KILA KITU, KISHA washa"). ----
+    in al, 0x21
+    and al, 0xFD                  ; safisha biti 1 (IRQ1) -- zilizobaki
+                                   ; zinabaki zimefungwa (masked) kwa
+                                   ; makusudi, Sehemu 3 ni kibodi TU
+    out 0x21, al
+    sti
+
 .halt64:
-    hlt
+    hlt                            ; ngoja interrupt (IRQ1 pekee
+                                   ; imefunguliwa) -- baada ya ISR
+                                   ; kurudi (iretq), utekelezaji
+                                   ; unaendelea HAPA HAPA (baada ya
+                                   ; hlt), si mwanzoni mwa kitanzi --
+                                   ; "jmp .halt64" chini inarudisha
+                                   ; kwenye hlt kwa mzunguko unaofuata
     jmp .halt64
 
 ; ---------------------------------------------------------------
@@ -176,6 +205,147 @@ _start64:
 ; ---------------------------------------------------------------
 kernel_main:
     incbin "kernel_main.bin"
+
+; ---------------------------------------------------------------
+; kernel_kbd_isr -- mantiki ya "kibodi imebonyezwa" (Sehemu 3),
+; kutoka kernel_kbd_isr.swa, KILICHOKUSANYWA TOFAUTI na kernel_main.bin
+; (mwito wake WENYEWE wa "stage1 --kernel", angalia gharama/jenga.sh).
+;
+; ", 11" ya incbin: "stage1 --kernel" HUONGEZA HARAKA baiti 11 za
+; "mov dword [0x9000], 0" (kusafisha kaka ya VGA) MWANZONI kabisa mwa
+; KILA pato lake, bila masharti (angalia uzalishaji.swa, hali_exe==2,
+; karibu na "0 KABLA kernel_main") -- kwa kernel_main.bin (Sehemu 2)
+; hii ni sahihi (kaka INAPASWA kuanza 0 mara moja, mwanzoni mwa boot).
+; LAKINI kwa ISR hii inayoitwa MARA NYINGI (kila bonyezo la kitufe),
+; ingesafisha kaka KILA WAKATI -- herufi mpya ingeandikwa JUU ya
+; iliyotangulia badala ya kuendelea. Baiti 11 za kwanza (kwa
+; uthibitisho: 0xC7 0x04 0x25 + disp32(0x9000) + imm32(0)) zinarukwa
+; MOJA KWA MOJA hapa (ugunduzi wa kando ulioandikwa wakati wa kujaribu
+; kukusanya kernel_kbd_isr.swa, angalia hati/mipaka.md) -- SI mdudu wa
+; kernel_kbd_isr.swa wala wa "stage1 --kernel" yenyewe, ni matokeo
+; ya makusudi ya kutumia tena mfumo wa "kazi moja kwa kila mwito"
+; kwa FAILI YA PILI.
+kernel_kbd_isr:
+    incbin "kernel_kbd_isr.bin", 11
+
+; ---------------------------------------------------------------
+; isr_kbd_trampoline -- ISR HALISI iliyosajiliwa kwenye IDT (vector
+; 0x21, IRQ1 baada ya PIC remap, angalia kawira_pic_remap_na_funga_zote
+; na kawira_weka_idt chini). Assembly SAFI (mantiki iko Swa,
+; kernel_kbd_isr juu) -- kazi yake PEKEE: hifadhi/rudisha rejesta
+; ZOTE za general-purpose (interrupt inaweza kutokea WAKATI WOWOTE,
+; hata katikati ya usemi wa kernel_main/kitanzi cha hlt -- HAKUNA
+; dhana inayoweza kufanywa kuhusu rejesta gani ziko "huru"), ita
+; kernel_kbd_isr, tuma EOI (End Of Interrupt) kwa PIC ya master,
+; kisha rudisha kwa "iretq" (SI "ret" ya kawaida -- usanifu wa x86
+; interrupt unadai iretq, ambayo pia inarudisha RFLAGS/CS/RIP
+; zilizosukumwa MOJA KWA MOJA na maunzi wakati wa kuingia kwenye
+; interrupt, tofauti na "call" ya kawaida).
+isr_kbd_trampoline:
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push rbp
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+
+    call kernel_kbd_isr
+
+    mov al, 0x20                   ; EOI (End Of Interrupt) kwa PIC
+    out 0x20, al                   ; ya MASTER pekee -- IRQ1 haitoki
+                                    ; kwenye slave PIC, hivyo EOI ya
+                                    ; slave (port 0xA0) haihitajiki
+
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rbp
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    iretq
+
+; ---------------------------------------------------------------
+; kawira_weka_idt -- jenga IDT (256 entries x baiti 16 = 4096 HASA,
+; angalia "idt_table" chini) na "lidt". ENTRY MOJA TU (0x21, kibodi
+; baada ya PIC remap) ina maana -- zilizobaki zinabaki "not present"
+; (biti ya "present" = 0, kwa sababu jedwali zima limeanzishwa 0
+; kabla ya %rep kuandika entry 0x21). KIKOMO CHA WAZI (makusudi, kwa
+; muda, angalia hati/mipaka.md): exception/interrupt yoyote NJE ya
+; IRQ1 (mfano #DE division-by-zero, #PF page fault kutoka kwa
+; mdudu) itasababisha triple fault (QEMU inasimama/inarudisha upya)
+; -- handler ya jumla ya exceptions ni kazi ya Sehemu 4+ (inahitaji
+; kushughulikia error-code-on-stack kwa baadhi ya vectors, utata
+; usiohitajika kwa lengo la Sehemu 3 "kibodi inafanya kazi").
+; ---------------------------------------------------------------
+kawira_weka_idt:
+    lidt [idt_pointer]
+    ret
+
+; ---------------------------------------------------------------
+; kawira_pic_remap_na_funga_zote -- 8259 PIC: ICW1-4 (mlolongo wa
+; kawaida wa OSDev, angalia "8259 PIC" OSDev Wiki), ukisogeza IRQ0-7
+; (master) kwenda vectors 0x20-0x27 na IRQ8-15 (slave) kwenda
+; 0x28-0x2F -- BILA remap hii, IRQ0-7 zingegongana na CPU exception
+; vectors 0x00-0x07 (mfano IRQ0/timer ingefika kama #DE). Baada ya
+; ICW4, IRQ ZOTE zinafungwa (masked, 0xFF) -- "unmask" ya IRQ1 PEKEE
+; inatokea BAADAYE, kwenye _start64 (baada ya kernel_main kurudi),
+; SI hapa -- mgawanyo wa makusudi: kazi hii "inaandaa" PIC, _start64
+; "inaamua lini kuruhusu" IRQ1 halisi kuanza kufika.
+; io_wait (andika kwenye port 0x80, "debug port" isiyotumika) kati
+; ya baadhi ya hatua -- desturi ya OSDev kwa maunzi ya kale ya 8259
+; yanayohitaji muda kati ya amri (QEMU haihitaji hii, LAKINI
+; kuiacha ni sahihi zaidi/kinga dhidi ya maunzi halisi ya baadaye).
+; ---------------------------------------------------------------
+kawira_pic_remap_na_funga_zote:
+    mov al, 0x11                   ; ICW1: init + "ICW4 itafuata"
+    out 0x20, al
+    out 0x80, al                   ; io_wait
+    out 0xA0, al
+    out 0x80, al                   ; io_wait
+
+    mov al, 0x20                   ; ICW2 (master): IRQ0-7 -> 0x20-0x27
+    out 0x21, al
+    out 0x80, al
+    mov al, 0x28                   ; ICW2 (slave): IRQ8-15 -> 0x28-0x2F
+    out 0xA1, al
+    out 0x80, al
+
+    mov al, 4                      ; ICW3 (master): slave iko IRQ2 (biti 2)
+    out 0x21, al
+    out 0x80, al
+    mov al, 2                      ; ICW3 (slave): "cascade identity" = 2
+    out 0xA1, al
+    out 0x80, al
+
+    mov al, 1                      ; ICW4: hali ya 8086/8088
+    out 0x21, al
+    out 0x80, al
+    out 0xA1, al
+    out 0x80, al
+
+    mov al, 0xFF                   ; funga (mask) IRQ ZOTE kwa sasa --
+    out 0x21, al                   ; _start64 itafungua IRQ1 pekee
+    out 0xA1, al                   ; baada ya kernel_main kurudi
+
+    ret
 
 ; ---------------------------------------------------------------
 ; Data: GDT ndogo ya 64-bit (null + code + data PEKEE -- hakuna TSS,
@@ -211,6 +381,52 @@ pd:   times 512 dq 0
 
 mb_magic_saved: dd 0
 mb_info_saved:  dd 0
+
+; ---------------------------------------------------------------
+; IDT (256 entries x baiti 16 = 4096 HASA -- kwa bahati, kama
+; kurasa moja, lakini SI muhimu kwa usahihi, ni "align 4096" tu ya
+; kawaida). Kila entry ni "interrupt gate" ya 64-bit (angalia Intel
+; SDM Vol. 3A, 6.14.1): offset(16) + selector(16) + IST(3)+zero(5) +
+; type_attr(8) + offset(16) + offset(32) + zero(32).
+;
+; %rep 256 inaandika entry 0 KILA WAKATI (yaani "not present", biti
+; ya "present" = 0 kwenye type_attr) ISIPOKUWA index 0x21 (kibodi),
+; ambayo inaandikwa MAALUM ikielekeza kwenye isr_kbd_trampoline juu.
+; NASM haikubali "(lebo >> 16)"/"(lebo & 0xFFFF)" MOJA KWA MOJA hata
+; kwenye "-f bin" (imethibitishwa kwa jaribio dogo tofauti -- lebo
+; peke yake "si scalar" kwa mkusanyiko wa NASM, ingawa thamani yake
+; ni namba kamili tu hapa) -- suluhisho la kawaida (linalotumika na
+; jamii ya OSDev): "lebo - $$" NI scalar HALISI (tofauti ya lebo mbili
+; kwenye sehemu MOJA, kama "dw $ - gdt64 - 1" iliyopo tayari juu kwa
+; gdt64.pointer), kisha ongeza KIINI_BASE (0x100000, SAWA na [ORG]
+; iliyotangazwa juu ya faili hii) kupata anwani KAMILI -- baada ya
+; hapo, shift/AND zinafanya kazi kama kawaida kwa namba ya kawaida.
+; ---------------------------------------------------------------
+KIINI_BASE equ 0x100000
+align 4096
+idt_table:
+%assign kawira_idt_i 0
+%rep 256
+%if kawira_idt_i == 0x21
+    dw (((isr_kbd_trampoline - $$) + KIINI_BASE) & 0xFFFF)
+    dw CODE_SEG64
+    db 0
+    db 0x8E                        ; present(1) DPL(00) S(0) type(1110)
+                                    ; -- "interrupt gate" ya 64-bit
+    dw (((isr_kbd_trampoline - $$) + KIINI_BASE) >> 16) & 0xFFFF
+    dd (((isr_kbd_trampoline - $$) + KIINI_BASE) >> 32) & 0xFFFFFFFF
+    dd 0
+%else
+    dq 0
+    dq 0
+%endif
+%assign kawira_idt_i kawira_idt_i + 1
+%endrep
+idt_table_mwisho:
+
+idt_pointer:
+    dw idt_table_mwisho - idt_table - 1   ; ukubwa - 1 (mkataba wa lidt)
+    dq idt_table
 
 ; ---------------------------------------------------------------
 ; Rafu mbili tofauti (32-bit ya muda kwa mpito, 64-bit ya kudumu) --

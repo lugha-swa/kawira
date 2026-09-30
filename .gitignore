@@ -1,4 +1,5 @@
 kawira.bin
 kernel_main.bin
+kernel_kbd_isr.bin
 *.o
 mon.sock

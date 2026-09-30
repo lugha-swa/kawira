@@ -26,12 +26,14 @@ ukaguzi wa kujitegemea unaotumika kwenye lugha-swa/swa.
 ## Hali ya sasa
 
 Angalia [`hati/mipaka.md`](hati/mipaka.md) kwa hali kamili, ya kweli
-(kila dai lina uthibitisho ulioandikwa) — `kiini.s` (boot stub) na
-`kernel_main.swa` (Swa HALISI, iliyokusanywa na `stage1 --kernel`
-kutoka [lugha-swa/swa](https://github.com/lugha-swa/swa)) zote mbili
-zimekamilika na zimethibitishwa kwa QEMU: Kawira inaanza, inaingia
-64-bit long mode, na kuandika "Kawira -- Swa kwenye ring 0" kwenye
-skrini -- kikitokana na msimbo wa Swa uliokusanywa, si stub ya mkono.
+(kila dai lina uthibitisho ulioandikwa) — Kawira sasa INAINGILIANA:
+inaanza kutoka Multiboot1, inaingia 64-bit long mode, inaandika
+"Kawira -- Swa kwenye ring 0" kwenye skrini kupitia Swa halisi
+(`kernel_main.swa`), KISHA inasikiliza kibodi (IDT+PIC, Sehemu 3) --
+bonyeza kitufe (herufi ndogo, tarakimu, nafasi) na LIONEKANE papo
+hapo kwenye skrini, likiendelea kutoka pale ujumbe wa boot ulipoishia.
+Kimethibitishwa mwisho hadi mwisho kwa QEMU (`sendkey` kupitia monitor
+socket + usomaji wa VGA memory + usimbuzi wa mkono).
 
 ## Kujaribu
 
