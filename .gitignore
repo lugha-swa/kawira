@@ -1,0 +1,4 @@
+kawira.bin
+kernel_main.bin
+*.o
+mon.sock

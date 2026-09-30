@@ -1,0 +1,10 @@
+// kernel_main.swa -- Sehemu 1+2 zikiungana: kernel_main HALISI ya
+// Kawira, iliyokusanywa na "stage1 --kernel" (Sehemu 2, lugha-swa/swa
+// PR #290), ikichukua nafasi ya stub ya mkono ya assembly iliyotumika
+// na Sehemu 1 pekee (angalia hati/mipaka.md, historia ya awali). Hii
+// ndiyo uthibitisho wa mwisho: Swa halisi ikiendesha kwenye ring 0,
+// si tu mfano wa dhana.
+n32 kernel_main() {
+    vga_andika("Kawira -- Swa kwenye ring 0");
+    rudisha 0;
+}
