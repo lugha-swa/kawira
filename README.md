@@ -29,10 +29,10 @@ Leo Kawira **inaingiliana**: inaanza kutoka Multiboot1, inaingia long mode, inaa
 <summary><b>Jenga na uendeshe</b></summary>
 <br>
 
-Mahitaji: mkusanyaji wa Swa (`bin/swa` kutoka `gharama/jenga.sh` ya [lugha-swa/swa](https://github.com/lugha-swa/swa), au `stage1` yoyote), `kusanyiko` (assembler ya lugha ya mashine ya Swa: `bash gharama/jenga-kusanyiko.sh /njia/kusanyiko` ndani ya lugha-swa/swa -- hujengwa kutoka baiti 393 za mkono, bila NASM), na `qemu-system-x86_64`.
+Mahitaji: mkusanyaji wa Swa (`bin/swa` kutoka `./msingi/mjenzi.bin gharama/jenga.mapishi` ya [lugha-swa/swa](https://github.com/lugha-swa/swa), au `stage1` yoyote), `kusanyiko` (assembler ya lugha ya mashine ya Swa: `./msingi/mjenzi.bin gharama/kusanyiko.mapishi` ndani ya lugha-swa/swa, kisha `jengo/kusanyiko` -- hujengwa kutoka baiti 393 za mkono, bila NASM), na `qemu-system-x86_64`.
 
 ```sh
-export STAGE1=/njia/ya/swa/bin/swa KUSANYIKO=/njia/kusanyiko
+export STAGE1=/njia/ya/swa/bin/swa KUSANYIKO=/njia/ya/swa/jengo/kusanyiko
 bash gharama/jenga.sh          # kernel_main.swa (--kernel) + kiini.swm (kusanyiko)
 bash gharama/kimbiza-qemu.sh   # anzisha kwenye QEMU (KVM ikiwepo)
 bash gharama/jaribu.sh         # washa, bonyeza a b c, thibitisha skrini ya VGA

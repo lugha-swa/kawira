@@ -7,9 +7,10 @@
 # kludge -- HAKUNA ELF, HAKUNA linker, HAKUNA NASM.
 #
 # Inahitaji kutoka lugha-swa/swa:
-#   STAGE1     mkusanyaji wa Swa (bin/swa kutoka gharama/jenga.sh, au stage1)
+#   STAGE1     mkusanyaji wa Swa (bin/swa kutoka gharama/jenga.mapishi, au stage1)
 #   KUSANYIKO  assembler ya lugha ya mashine ya Swa, iliyojengwa kutoka
-#              baiti 393 za mkono: bash gharama/jenga-kusanyiko.sh /njia/kusanyiko
+#              baiti 393 za mkono: ./msingi/mjenzi.bin gharama/kusanyiko.mapishi
+#              (matokeo: jengo/kusanyiko ndani ya lugha-swa/swa)
 # Kila kimoja kinaweza pia kuwa kwenye PATH (stage1, kusanyiko).
 set -eu
 cd "$(dirname "$0")/.."
@@ -25,8 +26,8 @@ tafuta() {  # $1 jina la kigezo, $2 amri kwenye PATH, $3 maelekezo
     fi
     printf '%s' "$thamani"
 }
-STAGE1="$(tafuta STAGE1 stage1 "Jenga lugha-swa/swa (bash gharama/jenga.sh hutoa bin/swa), kisha: STAGE1=/njia/ya/swa/bin/swa")"
-KUSANYIKO="$(tafuta KUSANYIKO kusanyiko "Ndani ya lugha-swa/swa: bash gharama/jenga-kusanyiko.sh /njia/kusanyiko, kisha: KUSANYIKO=/njia/kusanyiko")"
+STAGE1="$(tafuta STAGE1 stage1 "Jenga lugha-swa/swa (./msingi/mjenzi.bin gharama/jenga.mapishi hutoa bin/swa), kisha: STAGE1=/njia/ya/swa/bin/swa")"
+KUSANYIKO="$(tafuta KUSANYIKO kusanyiko "Ndani ya lugha-swa/swa: ./msingi/mjenzi.bin gharama/kusanyiko.mapishi, kisha: KUSANYIKO=/njia/ya/swa/jengo/kusanyiko")"
 
 "$STAGE1" --kernel kernel_main.swa > kernel_main.bin
 echo "imejengwa: kernel_main.bin ($(stat -c%s kernel_main.bin) baiti, kutoka kernel_main.swa)"
