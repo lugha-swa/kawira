@@ -5,7 +5,7 @@ dai lina msingi wa uthibitisho halisi (jaribio la vitendo), si dhana.
 Kioo cha falsafa ya `hati/mipaka.md` ya lugha-swa/swa: kilicho kamili
 kimeandikwa kamili, kilicho na kikomo kimeandikwa na kikomo chake.
 
-## Sehemu 1+2 — `kiini.s` + `kernel_main.swa` (IMEKAMILIKA na IMETHIBITISHWA)
+## Sehemu 1+2 — `kiini.swm` + `kernel_main.swa` (IMEKAMILIKA na IMETHIBITISHWA)
 
 **Kinachofanya kazi (kimethibitishwa kwa vitendo, si kudhani):**
 Kawira inaanza kutoka Multiboot1 (32-bit protected mode), inaweka
@@ -17,7 +17,7 @@ iliyokusanywa na `stage1 --kernel` (Sehemu 2, `lugha-swa/swa` PR
 #290) kutoka `kernel_main.swa` chanzo kilichomo kwenye hazina hii, SI
 stub ya mkono tena. `kernel_main` inaandika mfuatano kamili ("Kawira
 -- Swa kwenye ring 0") kupitia `vga_andika()` kwenye VGA text buffer
-(0xB8000); `kiini.s` inashughulikia kurudi kwake kwa `cli; hlt` loop
+(0xB8000); `kiini.swm` inashughulikia kurudi kwake kwa `cli; hlt` loop
 (HAKUNA `exit` syscall -- hakuna mfumo wa uendeshaji chini yetu wa
 kuipokea).
 
@@ -57,7 +57,7 @@ kuipokea).
 
 ## Sehemu 3 — Interrupts na Uingizaji wa Kibodi (IMEKAMILIKA na IMETHIBITISHWA)
 
-**Kinachofanya kazi (kimethibitishwa kwa vitendo):** `kiini.s` sasa
+**Kinachofanya kazi (kimethibitishwa kwa vitendo):** `kiini.swm` sasa
 inaweka IDT (256 entries, entry 0x21 pekee ina maana -- angalia
 chini), inaremapa PIC ya 8259 (IRQ0-7 -> vectors 0x20-0x27, IRQ8-15
 -> 0x28-0x2F, kuepuka mgongano na CPU exception vectors), na baada ya
@@ -109,17 +109,15 @@ tabia ya makusudi iliyoshughulikiwa kwa uwazi):**
   (ni sahihi kwa `kernel_main.bin`, ambayo INAPASWA kuanzisha kaka
   mara moja). `kernel_kbd_isr.bin` (Sehemu 3) inaitwa MARA NYINGI
   (kila bonyezo), hivyo baiti hizi 11 zinarukwa MOJA KWA MOJA kwenye
-  `incbin` (`incbin "kernel_kbd_isr.bin", 11`, angalia maoni kwenye
-  `kiini.s`) -- imethibitishwa kwa usahihi kwa Python (`d[:11].hex()
+  `jumuisha` (`jumuisha "kernel_kbd_isr.bin", 11`, angalia maoni kwenye
+  `kiini.swm`) -- imethibitishwa kwa usahihi kwa Python (`d[:11].hex()
   == "c704250090000000000000"`, na `d[11:15] == push rbp; mov
   rbp,rsp` prologue HALISI ya kazi).
-- NASM haikubali `(lebo & 0xFFFF)`/`(lebo >> 16)` MOJA KWA MOJA hata
-  kwenye `-f bin` (jaribio dogo tofauti lilithibitisha hili ni tabia
-  ya JUMLA ya NASM, SI kosa la muundo wa IDT yetu) -- suluhisho
-  (linalotumika kwenye `idt_table`, `kiini.s`): `(lebo - $$) +
-  KIINI_BASE` ni SCALAR halali (tofauti ya lebo mbili kwenye sehemu
-  moja, kioo cha `dw $ - gdt64 - 1` iliyopo tayari), kisha shift/AND
-  zinafanya kazi kama kawaida.
+- (Kihistoria, kiini.s ya NASM): NASM haikukubali `(lebo & 0xFFFF)`
+  moja kwa moja hata kwenye `-f bin`, hivyo ilitumia `(lebo - $$) +
+  KIINI_BASE`. Kusanyiko la Swa halina kizuizi hicho: kwenye `picha`,
+  lebo tayari ni anwani kamili, hivyo `n16 = isr_kibodi & 0xFFFF`
+  inafanya kazi moja kwa moja.
 
 **Kikomo cha wazi (makusudi, kwa muda):**
 - IDT ina entry MOJA TU (0x21/IRQ1) -- zilizobaki 255 zinabaki "not
@@ -136,11 +134,11 @@ tabia ya makusudi iliyoshughulikiwa kwa uwazi):**
 
 ## Kanuni ya kudumu
 
-`kiini.s` ni KIINI CHA UAMINIFU cha mradi huu (sawa na jukumu la
-`msingi/mbegu.s` kwenye lugha-swa/swa) — badiliko lolote LAZIMA
+`kiini.swm` ni KIINI CHA UAMINIFU cha mradi huu (sawa na jukumu la
+`msingi/mbegu.swm` kwenye lugha-swa/swa) — badiliko lolote LAZIMA
 lithibitishwe kwa QEMU (uthibitisho wa yaliyomo ya kumbukumbu NA
 register state, si tu "haianguki") KABLA ya kuaminiwa, hakuna
-ubaguzi. Vivyo hivyo kwa `kernel_main.swa` sasa ikiwa Swa halisi --
+ubaguzi (`bash gharama/jaribu.sh`). Vivyo hivyo kwa `kernel_main.swa` sasa ikiwa Swa halisi --
 badiliko lolote kwake linahitaji uthibitisho ule ule wa QEMU wa
 mwisho hadi mwisho, si kuamini `--kernel` peke yake bila kujaribu
 boot ya kweli.

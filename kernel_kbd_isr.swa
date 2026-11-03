@@ -1,15 +1,15 @@
 // kernel_kbd_isr.swa -- mantiki ya "kibodi imebonyezwa" (Sehemu 3).
 //
 // Kazi hii INAKUSANYWA TOFAUTI na kernel_main.swa (mwito wake wa
-// "stage1 --kernel" TOFAUTI, incbin TOFAUTI kwenye kiini.s) --
+// "stage1 --kernel" TOFAUTI, jumuisha TOFAUTI kwenye kiini.swm) --
 // kioo cha muundo uliotumika Sehemu 2. Jina "kernel_main" HAPA SI
 // kosa la kunakili: kernel_kagua_wigo (lugha-swa/swa,
 // msingi/mkusanyaji/uzalishaji.swa) inadai kwa NGUVU kazi ya KWANZA
 // iliyotangazwa iitwe HASA "kernel_main" (angalia KOSA lake:
 // "hakuna kazi 'kernel_main'") -- ni jina linalotambuliwa na
-// kernel_kagua_wigo, SI jina la HALISI litakalotumika kwenye kiini.s
-// (huko, baiti za pato zinaitwa kupitia lebo "kernel_kbd_isr",
-// angalia kiini.s).
+// kernel_kagua_wigo, SI jina la HALISI litakalotumika kwenye kiini.swm
+// (huko, baiti za pato zinaitwa kupitia lebo "kibodi_swa",
+// angalia kiini.swm).
 //
 // Muundo: soma kbd_scancode() (port 0x60). Ikiwa biti ya juu
 // imewekwa (>= 128) -- tukio la "kuachia kitufe" (key release),

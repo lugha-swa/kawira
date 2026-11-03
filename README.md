@@ -29,11 +29,13 @@ Leo Kawira **inaingiliana**: inaanza kutoka Multiboot1, inaingia long mode, inaa
 <summary><b>Jenga na uendeshe</b></summary>
 <br>
 
-Mahitaji: mkusanyaji wa Swa (`bin/swa` kutoka `gharama/jenga.sh` ya [lugha-swa/swa](https://github.com/lugha-swa/swa), au `stage1` yoyote), `nasm`, na `qemu-system-x86_64`.
+Mahitaji: mkusanyaji wa Swa (`bin/swa` kutoka `gharama/jenga.sh` ya [lugha-swa/swa](https://github.com/lugha-swa/swa), au `stage1` yoyote), `kusanyiko` (assembler ya lugha ya mashine ya Swa: `bash gharama/jenga-kusanyiko.sh /njia/kusanyiko` ndani ya lugha-swa/swa -- hujengwa kutoka baiti 393 za mkono, bila NASM), na `qemu-system-x86_64`.
 
 ```sh
-STAGE1=/njia/ya/swa/bin/swa bash gharama/jenga.sh   # kernel_main.swa (--kernel) + kiini.s (nasm)
-bash gharama/kimbiza-qemu.sh                        # anzisha kwenye QEMU (KVM ikiwepo)
+export STAGE1=/njia/ya/swa/bin/swa KUSANYIKO=/njia/kusanyiko
+bash gharama/jenga.sh          # kernel_main.swa (--kernel) + kiini.swm (kusanyiko)
+bash gharama/kimbiza-qemu.sh   # anzisha kwenye QEMU (KVM ikiwepo)
+bash gharama/jaribu.sh         # washa, bonyeza a b c, thibitisha skrini ya VGA
 ```
 
 Hakuna GRUB, hakuna ISO, hakuna linker — QEMU inaelewa Multiboot1 moja kwa moja kupitia `-kernel`.
@@ -46,7 +48,7 @@ Hakuna GRUB, hakuna ISO, hakuna linker — QEMU inaelewa Multiboot1 moja kwa moj
 
 | Hatua | Faili | Kinachotokea |
 |---|---|---|
-| 1 | `kiini.s` | kichwa cha Multiboot1 → 32-bit → jedwali la paging → PAE + EFER.LME → long mode |
+| 1 | `kiini.swm` | kichwa cha Multiboot1 → 32-bit → jedwali la paging → PAE + EFER.LME → long mode |
 | 2 | `kernel_main.swa` | Swa halisi, imekusanywa kwa `--kernel`, inaandika kwenye VGA (`0xB8000`) |
 | 3 | `kernel_kbd_isr.swa` | IDT + PIC iliyohamishwa; ISR ya kibodi inaandika kila kitufe kwenye skrini |
 

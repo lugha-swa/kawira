@@ -1,0 +1,306 @@
+; kiini.swm -- kianzio cha mkono cha Kawira, kwa lugha ya mashine ya Swa
+; (hati/kusanyiko-x86.md ya lugha-swa/swa). KIINI CHA UAMINIFU: kila
+; mstari una sababu iliyoandikwa hapa, si tu kinachofanyika.
+;
+; Kazi: kuanzia Multiboot1 (biti 32, PE=1 PG=0), kuweka jedwali dogo la
+; kurasa (identity-map MB 2 za kwanza kwa ukurasa mkubwa mmoja), kuwezesha
+; long mode (PAE+LME+PG), kuruka kwenda sehemu ya msimbo ya biti 64 kupitia
+; GDT ndogo, kuweka IDT+PIC (Sehemu 3), kisha kuita kazi_kuu (Swa HALISI,
+; iliyozalishwa na "stage1 --kernel", Sehemu 2). Baada ya kazi_kuu kurudi,
+; kibodi (IRQ1) inawezeshwa na CPU inangoja matukio kwenye kitanzi cha
+; "simama".
+;
+; Fomati: PICHA TAMBARARE (si ELF) -- Multiboot "a.out kludge" (biti 16 ya
+; bendera) inaeleza bootloader/QEMU wapi pa kupakia na wapi pa kuruka moja
+; kwa moja kutoka kwenye kichwa, hivyo hakuna linker wala vichwa vya ELF.
+;
+; Hujengwa na kusanyiko la lugha-swa/swa (kutoka baiti 393 za mkono, bila
+; NASM): gharama/jenga.sh.
+
+picha 0x100000   ; anwani ya kudumu, salama (MB 1) -- juu ya eneo la chini
+                 ; lililohifadhiwa (IVT ya real mode, data ya BIOS, n.k.)
+biti 32
+
+fafanua MB_MAGIC = 0x1BADB002
+fafanua MB_BENDERA = 0x00010000   ; biti 16 = a.out kludge (kichwa kina
+                                  ; anwani za kupakia/kuruka moja kwa moja)
+
+n32 kichwa_mb = MB_MAGIC, MB_BENDERA, -(MB_MAGIC + MB_BENDERA)
+n32 = kichwa_mb   ; header_addr: anwani ya kichwa hiki
+n32 = kichwa_mb   ; load_addr: mwanzo wa faili = mwanzo wa picha
+n32 = 0           ; load_end_addr: 0 = pakia faili LOTE (rafu na majedwali
+                  ; ya kurasa yako NDANI ya faili, angalia chini)
+n32 = 0           ; bss_end_addr: 0 = hakuna bss ya ziada ya kusafisha
+n32 = anza32      ; entry_addr: hapa ndipo bootloader inaruka
+
+anza32:
+        katizo_zima   ; IDT haijawekwa bado -- katizo lolote lingeanguka
+        r4d = juu_rafu32   ; rafu ya biti 32 ya muda (Multiboot haiahidi
+                           ; r4d yoyote maalum)
+
+        n32[mb_magic_iliyohifadhiwa] = r0d   ; hifadhi r0d (0x2BADB002 ikiwa
+        n32[mb_taarifa_iliyohifadhiwa] = r3d ; sahihi) na r3d (anwani ya taarifa
+                                             ; za Multiboot) kwa Awamu 2+
+
+        linganisha r0d, 0x2BADB002   ; thibitisha huu ni Multiboot HALISI --
+        ruka .magic_sahihi kama ==   ; kama si sahihi, SIMAMA kwa wazi
+        ruka .kosa_magic             ; (usiendelee kimya na hali isiyojulikana)
+.magic_sahihi:
+
+; ---- Jedwali la kurasa: identity-map MB 2 za kwanza pekee, kwa ukurasa
+; MKUBWA mmoja (biti 7 ya PD) -- msimbo, data na rafu zote ziko chini ya
+; MB 2. ----
+        r0d = pdpt
+        r0d |= 3   ; ipo(biti 0) + inaandikika(biti 1)
+        n32[pml4] = r0d
+        n32[pml4 + 4] = 0   ; nusu ya juu ya kipengele (biti 63-32) = 0
+
+        r0d = pd
+        r0d |= 3
+        n32[pdpt] = r0d
+        n32[pdpt + 4] = 0
+
+        r0d = 0x83   ; ipo + inaandikika + mkubwa(biti 7)
+        n32[pd] = r0d   ; anwani ya kimwili ya ukurasa ni 0 (identity)
+        n32[pd + 4] = 0
+
+; ---- PAE (CR4 biti 5) -- LAZIMA kabla ya EFER.LME (SDM). ----
+        r0d = cr4
+        r0d |= 1 << 5
+        cr4 = r0d
+
+        r0d = pml4   ; CR3 = anwani ya kimwili ya PML4
+        cr3 = r0d
+
+; ---- long mode: EFER.LME (MSR 0xC0000080, biti 8) -- ni "ruhusa", si
+; ubadilishaji (inahitaji PG=1 pia). ----
+        r1d = 0xC0000080
+        soma_msr
+        r0d |= 1 << 8
+        andika_msr
+
+; ---- kurasa: CR0.PG (biti 31). CR0.PE tayari ni 1 (Multiboot). Baada ya
+; hapa tuko IA-32e compatibility mode -- long mode KAMILI inahitaji ruka
+; mbali kwenda CS ya biti 64. ----
+        r0d = cr0
+        r0d |= 1 << 31
+        cr0 = r0d
+
+        pakia_gdt [kiashiria_gdt]   ; GDT ndogo ya biti 64 (chini)
+        ruka_mbali SEHEMU_MSIMBO64, anza64   ; HII ndiyo inayobadilisha CS
+                                             ; kwenda long mode (ruka ya
+                                             ; karibu isingebadilisha CS)
+
+.kosa_magic:
+; magic si sahihi -- hatuwezi kuamini r0d/r3d wala taarifa ya bootloader.
+.simama32:
+        simama
+        ruka .simama32
+
+biti 64
+anza64:
+; rejista za sehemu bado zina wachaguzi wa zamani wa biti 32 -- zipakie
+; upya na mchaguzi wa data ya biti 64 (SS hasa lazima uwe HALALI).
+        r0w = SEHEMU_DATA64
+        ds = r0w
+        es = r0w
+        fs = r0w
+        gs = r0w
+        ss = r0w
+
+        r4 = juu_rafu64   ; rafu HALISI ya biti 64 (tofauti na ya biti 32)
+
+; ---- Sehemu 3: IDT + PIC KABLA ya kazi_kuu -- katizo bado zimezimwa,
+; "katizo_washa" halisi inakuja BAADA ya kazi_kuu kurudi. ----
+        ita weka_idt
+        ita pic_hamisha_na_funga_zote
+
+        ita kazi_kuu   ; Swa HALISI (Sehemu 2) -- hakuna hoja (ring 0).
+                       ; Huandika ujumbe wa boot kwenye VGA kisha hurudi;
+                       ; kazi halisi inatokea kwenye ISR ya kibodi.
+
+; ---- fungua IRQ1 (kibodi) PEKEE kwenye PIC kuu, KISHA washa katizo --
+; "andaa kila kitu, kisha washa". ----
+        r0b = bandari[0x21]
+        r0b &= 0xFD   ; safisha biti 1 (IRQ1); zilizobaki zinabaki zimefungwa
+        bandari[0x21] = r0b
+        katizo_washa
+
+.simama64:
+        simama   ; ngoja katizo; baada ya ISR (rudi_katizo) utekelezaji
+                 ; unaendelea HAPA, kisha unarudi kwenye simama
+        ruka .simama64
+
+; ---------------------------------------------------------------
+; kazi_kuu -- Swa HALISI: baiti ghafi za kernel_main.swa ("stage1 --kernel",
+; Sehemu 2). kernel_main ni kazi YA KWANZA iliyotangazwa, hivyo baiti
+; zinaanzia ofseti 0 na zinaisha kwa "rudi" ya kawaida.
+; ---------------------------------------------------------------
+kazi_kuu:
+        jumuisha "kernel_main.bin"
+
+; ---------------------------------------------------------------
+; kibodi_swa -- mantiki ya "kibodi imebonyezwa" (Sehemu 3) kutoka
+; kernel_kbd_isr.swa, iliyokusanywa TOFAUTI.
+;
+; ", 11": "stage1 --kernel" huongeza baiti 11 za "n32[0x9000] = 0"
+; (kusafisha kaka ya VGA) mwanzoni mwa KILA pato lake. Kwa kazi_kuu hiyo
+; ni sahihi; kwa ISR inayoitwa kila bonyezo ingesafisha kaka kila wakati,
+; hivyo baiti 11 hizo (C7 04 25 + anwani32 0x9000 + namba32 0) zinarukwa
+; hapa (angalia hati/mipaka.md).
+kibodi_swa:
+        jumuisha "kernel_kbd_isr.bin", 11
+
+; ---------------------------------------------------------------
+; isr_kibodi -- ISR HALISI kwenye IDT (vector 0x21, IRQ1 baada ya PIC
+; kuhamishwa). Hifadhi/rudisha rejista ZOTE za jumla (katizo linaweza
+; kufika wakati wowote), ita kibodi_swa, tuma EOI kwa PIC kuu, kisha
+; rudi_katizo (si "rudi" -- inarudisha pia RFLAGS/CS/RIP zilizosukumwa
+; na maunzi).
+isr_kibodi:
+        sukuma r0
+        sukuma r3
+        sukuma r1
+        sukuma r2
+        sukuma r6
+        sukuma r7
+        sukuma r5
+        sukuma r8
+        sukuma r9
+        sukuma r10
+        sukuma r11
+        sukuma r12
+        sukuma r13
+        sukuma r14
+        sukuma r15
+
+        ita kibodi_swa
+
+        r0b = 0x20   ; EOI kwa PIC KUU pekee -- IRQ1 haitoki kwenye PIC ya
+        bandari[0x20] = r0b   ; pili, hivyo EOI ya bandari 0xA0 haihitajiki
+
+        vuta r15
+        vuta r14
+        vuta r13
+        vuta r12
+        vuta r11
+        vuta r10
+        vuta r9
+        vuta r8
+        vuta r5
+        vuta r7
+        vuta r6
+        vuta r2
+        vuta r1
+        vuta r3
+        vuta r0
+        rudi_katizo
+
+; ---------------------------------------------------------------
+; weka_idt -- pakia IDT (vipengele 256 x baiti 16). Kipengele KIMOJA tu
+; (0x21, kibodi) kipo; vingine "havipo" (biti ya present = 0). KIKOMO CHA
+; WAZI (angalia hati/mipaka.md): exception yoyote nje ya IRQ1 husababisha
+; triple fault -- handler ya jumla ni kazi ya Sehemu 4+.
+; ---------------------------------------------------------------
+weka_idt:
+        pakia_idt [kiashiria_idt]
+        rudi
+
+; ---------------------------------------------------------------
+; pic_hamisha_na_funga_zote -- 8259 PIC: ICW1-4, IRQ0-7 (kuu) -> vectors
+; 0x20-0x27, IRQ8-15 (ya pili) -> 0x28-0x2F (bila hivi IRQ0-7 zingegongana
+; na vectors za exceptions 0x00-0x07). Baada ya ICW4 IRQ ZOTE hufungwa;
+; IRQ1 hufunguliwa baadaye na anza64. Kuandika bandari 0x80 (io_wait)
+; kati ya hatua ni desturi kwa maunzi ya kale ya 8259.
+; ---------------------------------------------------------------
+pic_hamisha_na_funga_zote:
+        r0b = 0x11   ; ICW1: anzisha + "ICW4 itafuata"
+        bandari[0x20] = r0b
+        bandari[0x80] = r0b   ; io_wait
+        bandari[0xA0] = r0b
+        bandari[0x80] = r0b
+
+        r0b = 0x20   ; ICW2 (kuu): IRQ0-7 -> 0x20-0x27
+        bandari[0x21] = r0b
+        bandari[0x80] = r0b
+        r0b = 0x28   ; ICW2 (ya pili): IRQ8-15 -> 0x28-0x2F
+        bandari[0xA1] = r0b
+        bandari[0x80] = r0b
+
+        r0b = 4   ; ICW3 (kuu): ya pili iko IRQ2 (biti 2)
+        bandari[0x21] = r0b
+        bandari[0x80] = r0b
+        r0b = 2   ; ICW3 (ya pili): "cascade identity" = 2
+        bandari[0xA1] = r0b
+        bandari[0x80] = r0b
+
+        r0b = 1   ; ICW4: hali ya 8086/8088
+        bandari[0x21] = r0b
+        bandari[0x80] = r0b
+        bandari[0xA1] = r0b
+        bandari[0x80] = r0b
+
+        r0b = 0xFF   ; funga IRQ ZOTE kwa sasa
+        bandari[0x21] = r0b
+        bandari[0xA1] = r0b
+        rudi
+
+; ---------------------------------------------------------------
+; GDT ndogo ya biti 64 (null + msimbo + data PEKEE -- hakuna TSS)
+; ---------------------------------------------------------------
+pangilia 8
+n64 gdt64 = 0                    ; kipengele null (WAJIBU)
+n64 = 0x00209A0000000000         ; msimbo wa biti 64: P=1 DPL=0 S=1
+                                 ; exec/read, L=1, D=0
+n64 = 0x0000920000000000         ; data ya biti 64: P=1 DPL=0 S=1 read/write
+gdt64_mwisho:
+n16 kiashiria_gdt = gdt64_mwisho - gdt64 - 1   ; ukubwa - 1 (mkataba wa lgdt)
+n64 = gdt64
+
+fafanua SEHEMU_MSIMBO64 = 8    ; ofseti ya kipengele cha msimbo
+fafanua SEHEMU_DATA64 = 16     ; ofseti ya kipengele cha data
+
+; ---------------------------------------------------------------
+; Majedwali ya kurasa (mpaka wa ukurasa, 4096) -- kipengele 0 tu kina
+; thamani; vingine ni sifuri.
+; ---------------------------------------------------------------
+pangilia 4096
+n64 pml4[512]
+n64 pdpt[512]
+n64 pd[512]
+
+n32 mb_magic_iliyohifadhiwa = 0
+n32 mb_taarifa_iliyohifadhiwa = 0
+
+; ---------------------------------------------------------------
+; IDT (vipengele 256 x baiti 16 = 4096). Kila kipengele ni "interrupt
+; gate" ya biti 64 (Intel SDM 3A 6.14.1): ofseti(16) + mchaguzi(16) +
+; IST(3)+sifuri(5) + aina(8) + ofseti(16) + ofseti(32) + sifuri(32).
+; Vipengele 0x00-0x20 na 0x22-0xFF ni sifuri ("havipo"); 0x21 huelekeza
+; kwenye isr_kibodi. Kwenye picha, isr_kibodi tayari ni anwani kamili.
+; ---------------------------------------------------------------
+pangilia 4096
+n64 jedwali_idt[0x21 * 2]                  ; vipengele 0x00-0x20
+n16 = isr_kibodi & 0xFFFF                  ; kipengele 0x21
+n16 = SEHEMU_MSIMBO64
+n8 = 0
+n8 = 0x8E                                  ; present(1) DPL(00) S(0) aina(1110)
+n16 = (isr_kibodi >> 16) & 0xFFFF
+n32 = (isr_kibodi >> 32) & 0xFFFFFFFF
+n32 = 0
+n64 idt_baadaye[(256 - 0x22) * 2]          ; vipengele 0x22-0xFF
+jedwali_idt_mwisho:
+
+n16 kiashiria_idt = jedwali_idt_mwisho - jedwali_idt - 1   ; ukubwa - 1 (lidt)
+n64 = jedwali_idt
+
+; ---------------------------------------------------------------
+; Rafu mbili tofauti (ya biti 32 ya muda kwa mpito, ya biti 64 ya kudumu).
+; ---------------------------------------------------------------
+pangilia 16
+n8 rafu32[4096]
+juu_rafu32:
+
+pangilia 16
+n8 rafu64[16384]
+juu_rafu64:
