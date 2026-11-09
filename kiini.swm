@@ -6,7 +6,7 @@
 ; kurasa (identity-map MB 2 za kwanza kwa ukurasa mkubwa mmoja), kuwezesha
 ; long mode (PAE+LME+PG), kuruka kwenda sehemu ya msimbo ya biti 64 kupitia
 ; GDT ndogo, kuweka IDT+PIC (Sehemu 3), kisha kuita kazi_kuu (Swa HALISI,
-; iliyozalishwa na "stage1 --kernel", Sehemu 2). Baada ya kazi_kuu kurudi,
+; iliyozalishwa na "stage1 --kiini", Sehemu 2). Baada ya kazi_kuu kurudi,
 ; kibodi (IRQ1) inawezeshwa na CPU inangoja matukio kwenye kitanzi cha
 ; "simama".
 ;
@@ -132,24 +132,24 @@ anza64:
         ruka .simama64
 
 ; ---------------------------------------------------------------
-; kazi_kuu -- Swa HALISI: baiti ghafi za kernel_main.swa ("stage1 --kernel",
-; Sehemu 2). kernel_main ni kazi YA KWANZA iliyotangazwa, hivyo baiti
+; kazi_kuu -- Swa HALISI: baiti ghafi za kazi_kuu.swa ("stage1 --kiini",
+; Sehemu 2). anza ni kazi YA KWANZA iliyotangazwa, hivyo baiti
 ; zinaanzia ofseti 0 na zinaisha kwa "rudi" ya kawaida.
 ; ---------------------------------------------------------------
 kazi_kuu:
-        jumuisha "kernel_main.bin"
+        jumuisha "kazi_kuu.bin"
 
 ; ---------------------------------------------------------------
 ; kibodi_swa -- mantiki ya "kibodi imebonyezwa" (Sehemu 3) kutoka
-; kernel_kbd_isr.swa, iliyokusanywa TOFAUTI.
+; kibodi.swa, iliyokusanywa TOFAUTI.
 ;
-; ", 11": "stage1 --kernel" huongeza baiti 11 za "n32[0x9000] = 0"
+; ", 11": "stage1 --kiini" huongeza baiti 11 za "n32[0x9000] = 0"
 ; (kusafisha kaka ya VGA) mwanzoni mwa KILA pato lake. Kwa kazi_kuu hiyo
 ; ni sahihi; kwa ISR inayoitwa kila bonyezo ingesafisha kaka kila wakati,
 ; hivyo baiti 11 hizo (C7 04 25 + anwani32 0x9000 + namba32 0) zinarukwa
 ; hapa (angalia hati/mipaka.md).
 kibodi_swa:
-        jumuisha "kernel_kbd_isr.bin", 11
+        jumuisha "kibodi.bin", 11
 
 ; ---------------------------------------------------------------
 ; isr_kibodi -- ISR HALISI kwenye IDT (vector 0x21, IRQ1 baada ya PIC

@@ -1,17 +1,17 @@
-// kernel_kbd_isr.swa -- mantiki ya "kibodi imebonyezwa" (Sehemu 3).
+// kibodi.swa -- mantiki ya "kibodi imebonyezwa" (Sehemu 3).
 //
-// Kazi hii INAKUSANYWA TOFAUTI na kernel_main.swa (mwito wake wa
-// "stage1 --kernel" TOFAUTI, jumuisha TOFAUTI kwenye kiini.swm) --
-// kioo cha muundo uliotumika Sehemu 2. Jina "kernel_main" HAPA SI
+// Kazi hii INAKUSANYWA TOFAUTI na kazi_kuu.swa (mwito wake wa
+// "stage1 --kiini" TOFAUTI, jumuisha TOFAUTI kwenye kiini.swm) --
+// kioo cha muundo uliotumika Sehemu 2. Jina "anza" HAPA SI
 // kosa la kunakili: kernel_kagua_wigo (lugha-swa/swa,
 // msingi/mkusanyaji/uzalishaji.swa) inadai kwa NGUVU kazi ya KWANZA
-// iliyotangazwa iitwe HASA "kernel_main" (angalia KOSA lake:
-// "hakuna kazi 'kernel_main'") -- ni jina linalotambuliwa na
+// iliyotangazwa iitwe HASA "anza" (angalia KOSA lake:
+// "hakuna kazi 'anza'") -- ni jina linalotambuliwa na
 // kernel_kagua_wigo, SI jina la HALISI litakalotumika kwenye kiini.swm
 // (huko, baiti za pato zinaitwa kupitia lebo "kibodi_swa",
 // angalia kiini.swm).
 //
-// Muundo: soma kbd_scancode() (port 0x60). Ikiwa biti ya juu
+// Muundo: soma msimbo_wa_kitufe() (port 0x60). Ikiwa biti ya juu
 // imewekwa (>= 128) -- tukio la "kuachia kitufe" (key release),
 // SIYO "kubonyeza" -- puuza. Vinginevyo, tafsiri Scan Code Set 1
 // (kiwango cha maunzi kilichoenea, kisichobadilika -- angalia
@@ -20,8 +20,8 @@
 // Funguo zisizotambulika (shift, ctrl, funguo maalum, herufi kubwa,
 // n.k.) zinapuuzwa KIMYA -- ni za kawaida kwa kibodi halisi, SI
 // hitilafu (nje ya wigo wa Sehemu 3, angalia hati/mipaka.md).
-n32 kernel_main() {
-    n32 s = kbd_scancode();
+n32 anza() {
+    n32 s = msimbo_wa_kitufe();
     kama (s >= 128) {
         rudisha 0;  // tukio la kuachia kitufe -- puuza
     }

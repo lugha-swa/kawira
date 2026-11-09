@@ -1,5 +1,5 @@
 kawira.bin
-kernel_main.bin
-kernel_kbd_isr.bin
+kazi_kuu.bin
+kibodi.bin
 *.o
 mon.sock
