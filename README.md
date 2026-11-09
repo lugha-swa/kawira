@@ -21,7 +21,7 @@
 
 **Kawira** ni kernel inayoanzisha, iliyoandikwa kwa [Swa](https://github.com/lugha-swa/swa) — bila Linux, bila libc, bila syscalls za mfumo mwingine. Swa ikiwa na mamlaka ya moja kwa moja juu ya maunzi. Sehemu pekee isiyo Swa ni `kiini.s`, assembly ndogo ya mkono inayovuka kutoka boot hadi 64-bit long mode.
 
-Leo Kawira **inaingiliana**: inaanza kutoka Multiboot1, inaingia long mode, inaandika ujumbe kwenye skrini kupitia Swa halisi (`kernel_main.swa`), kisha inasikiliza kibodi (IDT + PIC) — kila kitufe kinaonekana papo hapo.
+Leo Kawira **inaingiliana**: inaanza kutoka Multiboot1, inaingia long mode, inaandika ujumbe kwenye skrini kupitia Swa halisi (`kazi_kuu.swa`), kisha inasikiliza kibodi (IDT + PIC) — kila kitufe kinaonekana papo hapo.
 
 ## Anza
 
@@ -33,7 +33,7 @@ Mahitaji: mkusanyaji wa Swa (`bin/swa` kutoka `./msingi/mjenzi.bin gharama/jenga
 
 ```sh
 export STAGE1=/njia/ya/swa/bin/swa KUSANYIKO=/njia/ya/swa/jengo/kusanyiko
-bash gharama/jenga.sh          # kernel_main.swa (--kernel) + kiini.swm (kusanyiko)
+bash gharama/jenga.sh          # kazi_kuu.swa (--kiini) + kiini.swm (kusanyiko)
 bash gharama/kimbiza-qemu.sh   # anzisha kwenye QEMU (KVM ikiwepo)
 bash gharama/jaribu.sh         # washa, bonyeza a b c, thibitisha skrini ya VGA
 ```
@@ -49,8 +49,8 @@ Hakuna GRUB, hakuna ISO, hakuna linker — QEMU inaelewa Multiboot1 moja kwa moj
 | Hatua | Faili | Kinachotokea |
 |---|---|---|
 | 1 | `kiini.swm` | kichwa cha Multiboot1 → 32-bit → jedwali la paging → PAE + EFER.LME → long mode |
-| 2 | `kernel_main.swa` | Swa halisi, imekusanywa kwa `--kernel`, inaandika kwenye VGA (`0xB8000`) |
-| 3 | `kernel_kbd_isr.swa` | IDT + PIC iliyohamishwa; ISR ya kibodi inaandika kila kitufe kwenye skrini |
+| 2 | `kazi_kuu.swa` | Swa halisi, imekusanywa kwa `--kiini`, inaandika kwenye VGA (`0xB8000`) |
+| 3 | `kibodi.swa` | IDT + PIC iliyohamishwa; ISR ya kibodi inaandika kila kitufe kwenye skrini |
 
 Kila hatua imethibitishwa mwisho hadi mwisho kwa QEMU: `sendkey` kupitia monitor socket, usomaji wa kumbukumbu ya VGA, na rejesta (`EFER.LMA`) — si kwa kudhania.
 
@@ -63,7 +63,7 @@ Hali kamili, kila dai likiwa na uthibitisho wake, iko kwenye [`hati/mipaka.md`](
 | Sehemu | Maelezo | Hali |
 |---|---|---|
 | 1 | boot stub ya mkono, long mode | imekamilika |
-| 2 | `kernel_main` ya Swa halisi | imekamilika |
+| 2 | `anza` ya Swa halisi | imekamilika |
 | 3 | IDT, PIC, kibodi | imekamilika |
 | 4 | exceptions na faults, funguo maalum (shift, backspace, enter) | inayofuata |
 

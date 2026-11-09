@@ -1,6 +1,6 @@
 #!/bin/bash
-# jenga.sh — kusanya kernel_main.swa NA kernel_kbd_isr.swa (kila moja kwa
-# mwito WAKE WENYEWE, TOFAUTI, wa "stage1 --kernel" ya lugha-swa/swa,
+# jenga.sh — kusanya kazi_kuu.swa NA kibodi.swa (kila moja kwa
+# mwito WAKE WENYEWE, TOFAUTI, wa "stage1 --kiini" ya lugha-swa/swa,
 # Sehemu 2+3 -- angalia hati/mipaka.md) kuwa .bin mbili, kisha kiini.swm
 # (kusanyiko -- lugha ya mashine ya Swa, ikijumuisha zote mbili kupitia
 # "jumuisha") kuwa kawira.bin -- picha tambarare ya Multiboot1, a.out
@@ -29,11 +29,11 @@ tafuta() {  # $1 jina la kigezo, $2 amri kwenye PATH, $3 maelekezo
 STAGE1="$(tafuta STAGE1 stage1 "Jenga lugha-swa/swa (./msingi/mjenzi.bin gharama/jenga.mapishi hutoa bin/swa), kisha: STAGE1=/njia/ya/swa/bin/swa")"
 KUSANYIKO="$(tafuta KUSANYIKO kusanyiko "Ndani ya lugha-swa/swa: ./msingi/mjenzi.bin gharama/kusanyiko.mapishi, kisha: KUSANYIKO=/njia/ya/swa/jengo/kusanyiko")"
 
-"$STAGE1" --kernel kernel_main.swa > kernel_main.bin
-echo "imejengwa: kernel_main.bin ($(stat -c%s kernel_main.bin) baiti, kutoka kernel_main.swa)"
+"$STAGE1" --kiini kazi_kuu.swa > kazi_kuu.bin
+echo "imejengwa: kazi_kuu.bin ($(stat -c%s kazi_kuu.bin) baiti, kutoka kazi_kuu.swa)"
 
-"$STAGE1" --kernel kernel_kbd_isr.swa > kernel_kbd_isr.bin
-echo "imejengwa: kernel_kbd_isr.bin ($(stat -c%s kernel_kbd_isr.bin) baiti, kutoka kernel_kbd_isr.swa)"
+"$STAGE1" --kiini kibodi.swa > kibodi.bin
+echo "imejengwa: kibodi.bin ($(stat -c%s kibodi.bin) baiti, kutoka kibodi.swa)"
 
 "$KUSANYIKO" < kiini.swm > kawira.bin
 echo "imejengwa: kawira.bin ($(stat -c%s kawira.bin) baiti)"
