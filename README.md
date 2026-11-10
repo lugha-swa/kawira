@@ -19,7 +19,7 @@
 </div>
 <br>
 
-**Kawira** ni kernel inayoanzisha, iliyoandikwa kwa [Swa](https://github.com/lugha-swa/swa) — bila Linux, bila libc, bila syscalls za mfumo mwingine. Swa ikiwa na mamlaka ya moja kwa moja juu ya maunzi. Sehemu pekee isiyo Swa ni `kiini.s`, assembly ndogo ya mkono inayovuka kutoka boot hadi 64-bit long mode.
+**Kawira** ni kiini kinachoanzisha, iliyoandikwa kwa [Swa](https://github.com/lugha-swa/swa) — bila Linux, bila libc, bila syscalls za mfumo mwingine. Swa ikiwa na mamlaka ya moja kwa moja juu ya maunzi. Sehemu pekee isiyo Swa ni `kiini.s`, assembly ndogo ya mkono inayovuka kutoka boot hadi 64-bit long mode.
 
 Leo Kawira **inaingiliana**: inaanza kutoka Multiboot1, inaingia long mode, inaandika ujumbe kwenye skrini kupitia Swa halisi (`kazi_kuu.swa`), kisha inasikiliza kibodi (IDT + PIC) — kila kitufe kinaonekana papo hapo.
 
@@ -29,10 +29,10 @@ Leo Kawira **inaingiliana**: inaanza kutoka Multiboot1, inaingia long mode, inaa
 <summary><b>Jenga na uendeshe</b></summary>
 <br>
 
-Mahitaji: mkusanyaji wa Swa (`bin/swa` kutoka `./msingi/mjenzi.bin gharama/jenga.mapishi` ya [lugha-swa/swa](https://github.com/lugha-swa/swa), au `stage1` yoyote), `kusanyiko` (assembler ya lugha ya mashine ya Swa: `./msingi/mjenzi.bin gharama/kusanyiko.mapishi` ndani ya lugha-swa/swa, kisha `jengo/kusanyiko` -- hujengwa kutoka baiti 393 za mkono, bila NASM), na `qemu-system-x86_64`.
+Mahitaji: mkusanyaji wa Swa (`bin/swa` kutoka `./msingi/mjenzi.bin gharama/jenga.mapishi` ya [lugha-swa/swa](https://github.com/lugha-swa/swa)), `kusanyiko` (assembler ya lugha ya mashine ya Swa: `./msingi/mjenzi.bin gharama/kusanyiko.mapishi` ndani ya lugha-swa/swa, kisha `jengo/kusanyiko` -- hujengwa kutoka baiti 393 za mkono, bila NASM), na `qemu-system-x86_64`.
 
 ```sh
-export STAGE1=/njia/ya/swa/bin/swa KUSANYIKO=/njia/ya/swa/jengo/kusanyiko
+export SWA=/njia/ya/swa/bin/swa KUSANYIKO=/njia/ya/swa/jengo/kusanyiko
 bash gharama/jenga.sh          # kazi_kuu.swa (--kiini) + kiini.swm (kusanyiko)
 bash gharama/kimbiza-qemu.sh   # anzisha kwenye QEMU (KVM ikiwepo)
 bash gharama/jaribu.sh         # washa, bonyeza a b c, thibitisha skrini ya VGA
@@ -62,7 +62,7 @@ Hali kamili, kila dai likiwa na uthibitisho wake, iko kwenye [`hati/mipaka.md`](
 
 | Sehemu | Maelezo | Hali |
 |---|---|---|
-| 1 | boot stub ya mkono, long mode | imekamilika |
+| 1 | kianzishi cha mkono, long mode | imekamilika |
 | 2 | `anza` ya Swa halisi | imekamilika |
 | 3 | IDT, PIC, kibodi | imekamilika |
 | 4 | exceptions na faults, funguo maalum (shift, backspace, enter) | inayofuata |

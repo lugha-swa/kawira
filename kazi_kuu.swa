@@ -1,6 +1,6 @@
 // kazi_kuu.swa -- Sehemu 1+2 zikiungana: anza HALISI ya
-// Kawira, iliyokusanywa na "stage1 --kiini" (Sehemu 2, lugha-swa/swa
-// PR #290), ikichukua nafasi ya stub ya mkono ya assembly iliyotumika
+// Kawira, iliyokusanywa na "swa --kiini" (Sehemu 2, lugha-swa/swa
+// PR #290), ikichukua nafasi ya kianzishi cha mkono cha lugha ya mashine iliyotumika
 // na Sehemu 1 pekee (angalia hati/mipaka.md, historia ya awali). Hii
 // ndiyo uthibitisho wa mwisho: Swa halisi ikiendesha kwenye ring 0,
 // si tu mfano wa dhana.
