@@ -1,7 +1,7 @@
 // kibodi.swa -- mantiki ya "kibodi imebonyezwa" (Sehemu 3).
 //
 // Kazi hii INAKUSANYWA TOFAUTI na kazi_kuu.swa (mwito wake wa
-// "stage1 --kiini" TOFAUTI, jumuisha TOFAUTI kwenye kiini.swm) --
+// "swa --kiini" TOFAUTI, jumuisha TOFAUTI kwenye kiini.swm) --
 // kioo cha muundo uliotumika Sehemu 2. Jina "anza" HAPA SI
 // kosa la kunakili: kernel_kagua_wigo (lugha-swa/swa,
 // msingi/mkusanyaji/uzalishaji.swa) inadai kwa NGUVU kazi ya KWANZA

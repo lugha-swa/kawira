@@ -13,9 +13,9 @@ jedwali dogo la paging (identity-map ya MB 2 za kwanza kwa ukurasa
 mkubwa mmoja wa 2MB), inawezesha PAE + long mode (EFER.LME) + paging
 (CR0.PG), inaruka kwenda 64-bit code segment kupitia GDT ndogo (null +
 code + data), na kuita `anza()` -- **SASA NI SWA HALISI**,
-iliyokusanywa na `stage1 --kiini` (Sehemu 2, `lugha-swa/swa` PR
+iliyokusanywa na `swa --kiini` (Sehemu 2, `lugha-swa/swa` PR
 #290) kutoka `kazi_kuu.swa` chanzo kilichomo kwenye hazina hii, SI
-stub ya mkono tena. `anza` inaandika mfuatano kamili ("Kawira
+kianzishi cha mkono tena. `anza` inaandika mfuatano kamili ("Kawira
 -- Swa kwenye ring 0") kupitia `vga_andika()` kwenye VGA text buffer
 (0xB8000); `kiini.swm` inashughulikia kurudi kwake kwa `cli; hlt` loop
 (HAKUNA `exit` syscall -- hakuna mfumo wa uendeshaji chini yetu wa
@@ -34,7 +34,7 @@ kuipokea).
   kwa mkono na Python, kimelinganishwa baiti kwa baiti na matokeo ya
   `nasm` (`od -t x4`) -- sahihi kabisa.
 - Ukubwa wa jumla wa `kawira.bin` (36880 baiti) HAUKUBADILIKA kati ya
-  toleo la stub (~16 baiti za `anza`) na toleo halisi la Swa
+  toleo la kianzishi (~16 baiti za `anza`) na toleo halisi la Swa
   (1113 baiti) -- imethibitishwa hii ni kwa sababu ya `align 4096`
   kabla ya majedwali ya paging (yote mawili yanatoshea ukurasa mmoja
   wa 4096 kabla ya alignment), SI mdudu.
@@ -67,7 +67,7 @@ linaloshughulikiwa (herufi ndogo a-z, tarakimu 0-9, nafasi) linaita
 `isr_kbd_trampoline` (assembly, inahifadhi/kurudisha rejesta ZOTE za
 general-purpose) -> `kibodi` (Swa HALISI, `kibodi.swa`,
 iliyokusanywa TOFAUTI na `kazi_kuu.swa` kwa mwito wake wenyewe wa
-`stage1 --kiini`) -> `msimbo_wa_kitufe()` kusoma port 0x60, tafsiri
+`swa --kiini`) -> `msimbo_wa_kitufe()` kusoma port 0x60, tafsiri
 Scan Code Set 1 kwenda ASCII, `vga_herufi(herufi)` kuandika kwenye
 skrini bila kuvuruga kaka (cursor) iliyopo -- herufi mpya zinaendelea
 KUTOKA pale ujumbe wa boot ulipoishia, SI kuandika juu yake.
@@ -104,7 +104,7 @@ iliyokokotolewa, SI mfuatano halisi).
 
 **Ugunduzi wa kando ulioandikwa wakati wa maendeleo (SI mdudu, ni
 tabia ya makusudi iliyoshughulikiwa kwa uwazi):**
-- `stage1 --kiini` HUONGEZA baiti 11 za `mov dword [0x9000], 0`
+- `swa --kiini` HUONGEZA baiti 11 za `mov dword [0x9000], 0`
   (kusafisha kaka) MWANZONI kabisa mwa KILA pato lake, bila masharti
   (ni sahihi kwa `kazi_kuu.bin`, ambayo INAPASWA kuanzisha kaka
   mara moja). `kibodi.bin` (Sehemu 3) inaitwa MARA NYINGI
