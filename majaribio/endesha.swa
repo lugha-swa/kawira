@@ -1,0 +1,211 @@
+husisha { msingi/maktaba/kumbukumbu.swa }
+husisha { msingi/maktaba/mfuatano.swa }
+
+// endesha.swa PICHA [VITUFE...] -- washa PICHA kwenye QEMU (KVM ikiwepo,
+// vinginevyo tcg), bonyeza VITUFE kupitia kifuatiliaji (sendkey), kisha
+// soma safu-mlalo ya kwanza ya VGA (0xB8000) na uichapishe kama maandishi.
+//
+// Huchukua nafasi ya endesha.py: majaribio ya Kawira hayahitaji Python.
+// Kawira haifiki HLT (husubiri kibodi milele), kwa hiyo -- kama endesha.py
+// -- tunasubiri muda wa kuwaka badala ya kusubiri HLT.
+
+n8 jibu[65536];
+n64 urefu_wa_jibu = 0;
+n8 njia_ya_soketi[108];
+n32 soketi = -1;
+n64 mchakato_wa_qemu = 0;
+
+w0 lala_ms(n64 n) {
+    n64 muda[2];
+    muda[0] = n / 1000;
+    muda[1] = (n % 1000) * 1000000;
+    wito_wa_mfumo(35, muda, 0, 0, 0, 0, 0);  // nanosleep
+}
+
+w0 safisha() {
+    kama (soketi >= 0) { mfumo_funga(soketi); soketi = -1; }
+    kama (mchakato_wa_qemu > 0) {
+        mfumo_tuma_ishara(mchakato_wa_qemu, 9);
+        n32 hali_ya_mwisho = 0;
+        mfumo_subiri4(mchakato_wa_qemu, &hali_ya_mwisho, 0);
+        mchakato_wa_qemu = 0;
+    }
+    wito_wa_mfumo(87, njia_ya_soketi, 0, 0, 0, 0, 0);  // unlink
+}
+
+w0 shindwa(n8* ujumbe) {
+    andika_kosa("KOSA: %s\n", ujumbe, 0, 0, 0, 0, 0);
+    safisha();
+    wito_wa_mfumo(60, 1, 0, 0, 0, 0, 0);
+}
+
+// Tafuta programu kwenye PATH (execve haitafuti yenyewe).
+n8* tafuta_kwenye_njia(n8** mazingira, n8* jina) {
+    n64 i = 0;
+    wakati (mazingira[i] != 0) {
+        kama (anza_kwa_mfuatano(mazingira[i], "PATH=")) {
+            n8* p = mazingira[i] + 5;
+            n8* kipande = tenga(512);
+            wakati (p[0] != 0) {
+                n64 n = 0;
+                wakati (p[n] != 0 && p[n] != 58) { n = n + 1; }  // ':'
+                kama (n > 0 && n < 400) {
+                    nakili(kipande, p, n);
+                    kipande[n] = 47;  // '/'
+                    nakili_mfuatano(kipande + n + 1, jina);
+                    kama (wito_wa_mfumo(21, kipande, 1, 0, 0, 0, 0) == 0) { rudisha kipande; }  // access(X_OK)
+                }
+                p = p + n;
+                kama (p[0] == 58) { p = p + 1; }
+            }
+        }
+        i = i + 1;
+    }
+    rudisha 0;
+}
+
+// Tuma amri kwa kifuatiliaji, subiri kidogo, soma jibu.
+w0 amri_ya_qemu(n8* maandishi) {
+    mfumo_andika(soketi, maandishi, urefu_wa_mfuatano(maandishi));
+    n8 mstari_mpya[1];
+    mstari_mpya[0] = 10;
+    mfumo_andika(soketi, mstari_mpya, 1);
+    lala_ms(300);
+    n64 r = mfumo_soma(soketi, jibu, 65535);
+    kama (r < 0) { r = 0; }
+    jibu[r] = 0;
+    urefu_wa_jibu = r;
+}
+
+n32 ni_heksa(n8 c) {
+    rudisha (c >= 48 && c <= 57) || (c >= 97 && c <= 102) || (c >= 65 && c <= 70);
+}
+
+n64 thamani_ya_heksa(n8 c) {
+    kama (c >= 48 && c <= 57) { rudisha c - 48; }
+    kama (c >= 97 && c <= 102) { rudisha c - 87; }
+    rudisha c - 55;
+}
+
+// Kusanya baiti za "xp" kutoka mistari ya kumbukumbu halisi pekee
+// ("000b8000: 0x4b 0x0f ..."), si mwangwi wa amri yenyewe.
+n32 kusanya_baiti(n8* baiti, n32 upeo) {
+    n32 idadi = 0;
+    n64 i = 0;
+    wakati (i < urefu_wa_jibu) {
+        n64 mwanzo = i;
+        wakati (i < urefu_wa_jibu && jibu[i] != 10) { i = i + 1; }
+        n64 mwisho = i;
+        i = i + 1;
+        n64 j = mwanzo;
+        wakati (j < mwisho && (jibu[j] == 32 || jibu[j] == 13)) { j = j + 1; }
+        n64 k = j;
+        wakati (k < mwisho && ni_heksa(jibu[k])) { k = k + 1; }
+        kama (k - j < 8 || k - j > 16 || k >= mwisho || jibu[k] != 58) { endelea; }  // ':'
+        k = k + 1;
+        wakati (k + 3 < mwisho + 1 && idadi < upeo) {
+            kama (jibu[k] == 48 && jibu[k + 1] == 120 && ni_heksa(jibu[k + 2]) && ni_heksa(jibu[k + 3])) {
+                baiti[idadi] = thamani_ya_heksa(jibu[k + 2]) * 16 + thamani_ya_heksa(jibu[k + 3]);
+                idadi = idadi + 1;
+                k = k + 4;
+            } sivyo {
+                k = k + 1;
+            }
+        }
+    }
+    rudisha idadi;
+}
+
+n32 anza(n32 idadi_ya_hoja, n8** hoja_za_mstari) {
+    kama (idadi_ya_hoja < 2) {
+        andika_kosa("matumizi: endesha <picha.bin> [vitufe...]\n", 0, 0, 0, 0, 0, 0);
+        rudisha 1;
+    }
+    n8* picha = hoja_za_mstari[1];
+    n8** mazingira = hoja_za_mstari + (idadi_ya_hoja + 1);
+    n8* qemu = tafuta_kwenye_njia(mazingira, "qemu-system-x86_64");
+    kama (qemu == 0) { shindwa("qemu-system-x86_64 haipo kwenye PATH"); }
+
+    // KVM kama /dev/kvm inasomeka na kuandikika (access, R_OK|W_OK = 6).
+    n32 ina_kvm = wito_wa_mfumo(21, "/dev/kvm", 6, 0, 0, 0, 0) == 0;
+    n8* kasi = "tcg";
+    kama (ina_kvm) { kasi = "kvm"; }
+
+    n64 kitambulisho = wito_wa_mfumo(39, 0, 0, 0, 0, 0, 0);  // getpid
+    mfuatano_umbiza(njia_ya_soketi, 108, "/tmp/kawira-endesha-%d.sock", kitambulisho, 0, 0, 0, 0, 0);
+    n8* kifuatiliaji = tenga(160);
+    mfuatano_umbiza(kifuatiliaji, 160, "unix:%s,server,nowait", njia_ya_soketi, 0, 0, 0, 0, 0);
+
+    n8** hoja = tenga(8 * 16);
+    hoja[0] = qemu; hoja[1] = "-accel"; hoja[2] = kasi;
+    hoja[3] = "-kernel"; hoja[4] = picha; hoja[5] = "-m"; hoja[6] = "64";
+    hoja[7] = "-display"; hoja[8] = "none"; hoja[9] = "-monitor"; hoja[10] = kifuatiliaji;
+    hoja[11] = 0;
+
+    mchakato_wa_qemu = mfumo_gawanyika();
+    kama (mchakato_wa_qemu == 0) {
+        n64 tupu = mfumo_fungua("/dev/null", 2, 0);
+        kama (tupu >= 0) {
+            wito_wa_mfumo(33, tupu, 1, 0, 0, 0, 0);  // dup2 -> mkondo wa matokeo
+            wito_wa_mfumo(33, tupu, 2, 0, 0, 0, 0);  // dup2 -> mkondo wa makosa
+        }
+        mfumo_tekeleza_programu(qemu, hoja, mazingira);
+        wito_wa_mfumo(60, 127, 0, 0, 0, 0, 0);
+    }
+    kama (mchakato_wa_qemu < 0) { mchakato_wa_qemu = 0; shindwa("fork ya QEMU imeshindwa"); }
+
+    // Unganisha kwenye soketi ya kifuatiliaji (AF_UNIX, SOCK_STREAM).
+    n8 anwani[110];
+    weka_sifuri(anwani, 110);
+    anwani[0] = 1;  // AF_UNIX
+    nakili_mfuatano(anwani + 2, njia_ya_soketi);
+    n64 urefu_wa_anwani = 2 + urefu_wa_mfuatano(njia_ya_soketi) + 1;
+    n32 jaribio = 0;
+    wakati (jaribio < 200 && soketi < 0) {
+        n64 s = wito_wa_mfumo(41, 1, 1, 0, 0, 0, 0);  // socket
+        kama (s >= 0) {
+            kama (wito_wa_mfumo(42, s, anwani, urefu_wa_anwani, 0, 0, 0) == 0) {  // connect
+                soketi = s;
+            } sivyo {
+                mfumo_funga(s);
+            }
+        }
+        kama (soketi < 0) { lala_ms(50); }
+        jaribio = jaribio + 1;
+    }
+    kama (soketi < 0) { shindwa("soketi ya kifuatiliaji cha QEMU haikuwahi kuonekana"); }
+
+    // Muda wa kuwaka: Kawira haifiki HLT, kwa hiyo tunasubiri kama endesha.py.
+    kama (ina_kvm) { lala_ms(1000); } sivyo { lala_ms(3000); }
+    amri_ya_qemu("");
+    n32 i = 2;
+    n8* amri = tenga(128);
+    wakati (i < idadi_ya_hoja) {
+        mfuatano_umbiza(amri, 128, "sendkey %s", hoja_za_mstari[i], 0, 0, 0, 0, 0);
+        amri_ya_qemu(amri);
+        lala_ms(200);
+        i = i + 1;
+    }
+    lala_ms(500);
+    amri_ya_qemu("xp /160bx 0xb8000");
+
+    // Herufi ziko kwenye baiti shufwa (baiti witiri ni rangi).
+    n8* baiti = tenga(160);
+    n32 idadi = kusanya_baiti(baiti, 160);
+    n8* skrini = tenga(81);
+    n32 n = 0;
+    n32 k = 0;
+    wakati (k < idadi) {
+        n8 c = baiti[k];
+        kama (c < 32 || c > 126) { c = 32; }
+        skrini[n] = c;
+        n = n + 1;
+        k = k + 2;
+    }
+    wakati (n > 0 && skrini[n - 1] == 32) { n = n - 1; }  // ondoa nafasi za mwisho
+    skrini[n] = 0;
+    andika("%s\n", skrini, 0, 0, 0, 0, 0);
+
+    safisha();
+    rudisha 0;
+}
