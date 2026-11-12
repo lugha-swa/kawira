@@ -6,7 +6,12 @@
 set -eu
 cd "$(dirname "$0")/.."
 bash gharama/jenga.sh > /dev/null
-SKRINI="$(python3 majaribio/endesha.py kawira.bin a b c)"
+SWA="${SWA:-$(command -v swa || true)}"
+[ -n "$SWA" ] || { echo "KOSA: SWA haipatikani (angalia gharama/jenga.sh)" >&2; exit 1; }
+"$SWA" --programu majaribio/endesha.swa > jengo_endesha
+chmod +x jengo_endesha
+SKRINI="$(./jengo_endesha kawira.bin a b c)"
+rm -f jengo_endesha
 TARAJIWA="Kawira -- Swa kwenye ring 0abc"
 case "$SKRINI" in
     "$TARAJIWA"*) echo "SAWA: $TARAJIWA" ;;
